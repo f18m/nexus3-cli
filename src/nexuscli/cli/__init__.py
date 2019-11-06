@@ -8,6 +8,7 @@ Usage:
   nexus3 (upload|up) <from_src> <to_repository> [--flatten] [--norecurse]
   nexus3 (download|dl) <from_repository> <to_dst> [--flatten] [--nocache]
   nexus3 (delete|del) <repository_path>
+  nexus3 version
   nexus3 <subcommand> [<arguments>...]
 
 Options:
@@ -26,6 +27,7 @@ Commands:
   upload        Upload file(s) to designated repository
   download      Download an artefact or a directory to local file system
   delete        Delete artefact(s) from repository
+  version       Show the Nexus3 CLI version and exit
 
 Sub-commands:
   cleanup_policy  Cleanup Policy management.
