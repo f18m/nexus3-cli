@@ -18,6 +18,7 @@ def log_prefix = "nexus3-cli GROOVY SCRIPT: "
 def request = new JsonSlurper().parseText(args)
 assert request.repoName: 'repoName parameter is required'
 assert request.assetRegex: 'name regular expression parameter is required, format: regexp'
+assert request.isWildcard != null: 'isWildcard parameter is required'
 assert request.dryRun != null: 'dryRun parameter is required'
 
 def repo = repository.repositoryManager.get(request.repoName)
@@ -34,9 +35,12 @@ def tx = storageFacet.txSupplier().get()
 try {
     tx.begin()
 
-    log.info(log_prefix + "Gathering list of assets from repository: ${request.repoName} matching regex pattern: ${request.assetRegex}")
-    Iterable<Asset> assets = tx.
-        findAssets(Query.builder().where('name MATCHES ').param(request.assetRegex).build(), [repo])
+    log.info(log_prefix + "Gathering list of assets from repository: ${request.repoName} matching pattern: ${request.assetRegex}  isWildcard: ${request.isWildcard}")
+    Iterable<Asset> assets
+    if (request.isWildcard)
+    	assets = tx.findAssets(Query.builder().where('name like ').param(request.assetRegex).build(), [repo])
+    else
+    	assets = tx.findAssets(Query.builder().where('name MATCHES ').param(request.assetRegex).build(), [repo])
 
     def urls = assets.collect { "/repository/${repo.name}/${it.name()}" }
 

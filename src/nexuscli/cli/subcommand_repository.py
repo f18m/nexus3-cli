@@ -24,7 +24,8 @@ Usage:
          [--write=<w_policy>]
          [--depth=<repo_depth>]
   nexus3 repository (delete|del) <repo_name> [--force]
-  nexus3 repository del_assets <repo_name> <assets_regex> [--force]
+  nexus3 repository del_assets_regex <repo_name> <assets_regex> [--force]
+  nexus3 repository del_assets_wildcard <repo_name> <assets_wildcard> [--force]
 
 Options:
   -h --help             This screen
@@ -41,7 +42,8 @@ Commands:
   repository create      Create a repository using the format and options provided
   repository list        List all repositories available on the server
   repository delete      Delete an entire repository (use with care!).
-  repository del_assets  Delete assets matching the provided regex from a repository
+  repository del_assets_regex  Delete assets matching the provided regex from a repository
+  repository del_assets_wildcard  Delete assets matching the provided wildcard (using % as wildcard) from a repository
 """
 from docopt import docopt
 from texttable import Texttable
@@ -133,15 +135,12 @@ def cmd_delete(nexus_client, args):
     return errors.CliReturnCode.SUCCESS.value
 
 
-def cmd_del_assets(nexus_client, args):
+def _cmd_del_assets(nexus_client, repoName, assetRegex, isWildcard, doForce):
     """Performs ``nexus3 repository delete_assets``"""
     
-    repoName = args.get('<repo_name>')
-    assetRegex = args.get('<assets_regex>')
-    
-    if not args.get('--force'):
-        sys.stdout.write('Retrieving assets matching regex {}\n'.format(assetRegex))
-        assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, True)
+    if not doForce:
+        sys.stdout.write('Retrieving assets matching {}\n'.format(assetRegex))
+        assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, isWildcard, True)
         if len(assets_list) == 0:
             sys.stdout.write('Found 0 matching assets: aborting delete\n')
             return errors.CliReturnCode.SUCCESS.value
@@ -150,7 +149,7 @@ def cmd_del_assets(nexus_client, args):
         util.input_with_default(
             'Press ENTER to confirm deletion', 'ctrl+c to cancel')
 
-    assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, False)
+    assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, isWildcard, False)
     if len(assets_list) == 0:
         sys.stdout.write('Found 0 matching assets: aborting delete\n')
         return errors.CliReturnCode.SUCCESS.value
@@ -159,6 +158,24 @@ def cmd_del_assets(nexus_client, args):
     return errors.CliReturnCode.SUCCESS.value
 
 
+def cmd_del_assets_regex(nexus_client, args):
+    """Performs ``nexus3 repository delete_assets``"""
+    
+    repoName = args.get('<repo_name>')
+    assetRegex = args.get('<assets_regex>')
+    doForce = args.get('--force')
+    return _cmd_del_assets(nexus_client, repoName, assetRegex, False, doForce)
+
+
+def cmd_del_assets_wildcard(nexus_client, args):
+    """Performs ``nexus3 repository delete_assets``"""
+    
+    repoName = args.get('<repo_name>')
+    assetWildcard = args.get('<assets_wildcard>')
+    doForce = args.get('--force')
+    return _cmd_del_assets(nexus_client, repoName, assetWildcard, True, doForce)
+
+    
 def main(argv=None):
     """Entrypoint for ``nexus3 repository`` subcommand."""
     arguments = docopt(__doc__, argv=argv)
