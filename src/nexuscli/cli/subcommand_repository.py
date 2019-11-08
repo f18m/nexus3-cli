@@ -2,7 +2,6 @@
 Usage:
   nexus3 repository --help
   nexus3 repository list
-  nexus3 repository (delete|del) <repo_name> [--force]
   nexus3 repository create hosted (bower|npm|nuget|pypi|raw|rubygems)
          <repo_name>
          [--blob=<store_name>] [--strict-content] [--cleanup=<c_policy>]
@@ -24,6 +23,8 @@ Usage:
          [--blob=<store_name>] [--strict-content] [--cleanup=<c_policy>]
          [--write=<w_policy>]
          [--depth=<repo_depth>]
+  nexus3 repository (delete|del) <repo_name> [--force]
+  nexus3 repository del_assets <repo_name> <assets_regex> [--force]
 
 Options:
   -h --help             This screen
@@ -37,12 +38,15 @@ Options:
   -f --force            Do not ask for confirmation before deleting
 
 Commands:
-  repository create  Create a repository using the format and options provided
-  repository list    List all repositories available on the server
-  repository delete  Delete a repository.
+  repository create      Create a repository using the format and options provided
+  repository list        List all repositories available on the server
+  repository delete      Delete an entire repository (use with care!).
+  repository del_assets  Delete assets matching the provided regex from a repository
 """
 from docopt import docopt
 from texttable import Texttable
+import json
+import sys
 
 from nexuscli.api import repository
 from nexuscli.cli import errors, util
@@ -126,6 +130,32 @@ def cmd_delete(nexus_client, args):
         util.input_with_default(
             'Press ENTER to confirm deletion', 'ctrl+c to cancel')
     nexus_client.repositories.delete(args.get('<repo_name>'))
+    return errors.CliReturnCode.SUCCESS.value
+
+
+def cmd_del_assets(nexus_client, args):
+    """Performs ``nexus3 repository delete_assets``"""
+    
+    repoName = args.get('<repo_name>')
+    assetRegex = args.get('<assets_regex>')
+    
+    if not args.get('--force'):
+        sys.stdout.write('Retrieving assets matching regex {}\n'.format(assetRegex))
+        assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, True)
+        if len(assets_list) == 0:
+            sys.stdout.write('Found 0 matching assets: aborting delete\n')
+            return errors.CliReturnCode.SUCCESS.value
+        
+        sys.stdout.write('Found {} matching assets:\n{}\n'.format(len(assets_list), '\n'.join(assets_list)))
+        util.input_with_default(
+            'Press ENTER to confirm deletion', 'ctrl+c to cancel')
+
+    assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, False)
+    if len(assets_list) == 0:
+        sys.stdout.write('Found 0 matching assets: aborting delete\n')
+        return errors.CliReturnCode.SUCCESS.value
+    
+    sys.stdout.write('Deleted {} matching assets:\n{}\n'.format(len(assets_list), '\n'.join(assets_list)))
     return errors.CliReturnCode.SUCCESS.value
 
 
