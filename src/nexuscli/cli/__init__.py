@@ -3,12 +3,12 @@
 
 Usage:
   nexus3 --help
+  nexus3 --version
   nexus3 login
   nexus3 (list|ls) <repository_path>
   nexus3 (upload|up) <from_src> <to_repository> [--flatten] [--norecurse]
   nexus3 (download|dl) <from_repository> <to_dst> [--flatten] [--nocache]
   nexus3 (delete|del) <repository_path>
-  nexus3 version
   nexus3 <subcommand> [<arguments>...]
 
 Options:
@@ -20,6 +20,7 @@ Options:
                         [default: False]
   --norecurse           Don't process subdirectories on `nexus3 up` transfers
                         [default: False]
+  --version             Show the Nexus3 CLI version and exit
 
 Commands:
   login         Test login and save credentials to ~/.nexus-cli
@@ -27,7 +28,6 @@ Commands:
   upload        Upload file(s) to designated repository
   download      Download an artefact or a directory to local file system
   delete        Delete artefact(s) from repository
-  version       Show the Nexus3 CLI version and exit
 
 Sub-commands:
   cleanup_policy  Cleanup Policy management.
@@ -51,6 +51,9 @@ def _find_root_command(arguments):
         if _is_root_command(command):
             if value is True:
                 return f'cmd_{command}'
+
+    if arguments.get('--version'):
+        return f'cmd_version'
 
     # docopt shouldn't allow this to happen
     raise NotImplementedError(f'Command not found in arguments: {arguments}')

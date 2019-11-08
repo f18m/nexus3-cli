@@ -154,6 +154,7 @@ def cmd_del(*args, **kwargs):
     """Alias for :func:`cmd_delete`"""
     return cmd_delete(*args, **kwargs)
 
+
 def cmd_version(nexus_client, _):
     version = pkg_resources.require("nexus3-cli")[0].version
     print(version)
