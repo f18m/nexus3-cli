@@ -24,7 +24,13 @@ assert request.dryRun != null: 'dryRun parameter is required'
 def repo = repository.repositoryManager.get(request.repoName)
 if (repo == null) {
     log.warn(log_prefix +  "Repository ${request.repoName} does not exist")
-    return
+
+    def result = JsonOutput.toJson([
+        success   : false,
+        error     : "Repository ${request.repoName} does not exist",
+        assets    : null
+    ])
+    return result
 }
 //assert repo.format instanceof RawFormat: "Repository ${request.repoName} is not raw, but ${repo.format}"
 log.info(log_prefix + "Valid repository: ${request.repoName}")
@@ -65,9 +71,9 @@ try {
     log.info(log_prefix + "Transaction committed successfully")
 
     def result = JsonOutput.toJson([
-        assets    : urls,
-        assetRegex : request.assetRegex,
-        repoName  : request.repoName
+        success   : true,
+        error     : "",
+        assets    : urls
     ])
     return result
 
@@ -77,6 +83,14 @@ try {
     log.info(log_prefix + "Rolling back changes...")
     tx.rollback()
     log.info(log_prefix + "Rollback done.")
+    
+    def result = JsonOutput.toJson([
+        success   : false,
+        error     : "Exception during processing",
+        assets    : null
+    ])
+    return result
+    
 } finally {
     // @todo Fix me! Danger Will Robinson!  
     tx.close()

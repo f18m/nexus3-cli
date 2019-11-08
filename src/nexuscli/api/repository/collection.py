@@ -176,10 +176,15 @@ class RepositoryCollection:
         if 'result' not in groovy_returned_json:
             raise exception.NexusClientAPIError(groovy_returned_json)
         script_result = json.loads(groovy_returned_json['result']) # this is actually a JSON: convert to Python dict
-        if 'assets' not in script_result:
+        if script_result == None or 'assets' not in script_result:
             raise exception.NexusClientAPIError(groovy_returned_json)
         
+        if 'success' in script_result and script_result['success']==False:
+            raise exception.NexusClientAPIError(script_result['error'])
+        
         assets_list = script_result['assets']
+        if assets_list == None:
+            assets_list = []
         return assets_list
         
     def create(self, repository):

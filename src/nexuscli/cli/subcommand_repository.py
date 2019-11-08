@@ -52,7 +52,7 @@ import sys
 
 from nexuscli.api import repository
 from nexuscli.cli import errors, util
-
+from nexuscli import exception, nexus_util
 
 def cmd_list(nexus_client, _):
     """Performs ``nexus3 repository list``"""
@@ -138,14 +138,23 @@ def cmd_delete(nexus_client, args):
 def _cmd_del_assets(nexus_client, repoName, assetRegex, isWildcard, doForce):
     """Performs ``nexus3 repository delete_assets``"""
     
+    nl = '\n' # see https://stackoverflow.com/questions/44780357/how-to-use-newline-n-in-f-string-to-format-output-in-python-3-6
+    
     if not doForce:
-        sys.stdout.write('Retrieving assets matching {}\n'.format(assetRegex))
-        assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, isWildcard, True)
+        sys.stdout.write(f'Retrieving assets matching {assetRegex}\n')
+        
+        assets_list = []
+        try:
+            assets_list = nexus_client.repositories.delete_assets(repoName, assetRegex, isWildcard, True)
+        except exception.NexusClientAPIError as e:
+            sys.stderr.write(f'Error while running API: {e}\n')
+            return errors.CliReturnCode.API_ERROR.value
+            
         if len(assets_list) == 0:
             sys.stdout.write('Found 0 matching assets: aborting delete\n')
             return errors.CliReturnCode.SUCCESS.value
         
-        sys.stdout.write('Found {} matching assets:\n{}\n'.format(len(assets_list), '\n'.join(assets_list)))
+        sys.stdout.write(f'Found {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
         util.input_with_default(
             'Press ENTER to confirm deletion', 'ctrl+c to cancel')
 
@@ -154,7 +163,7 @@ def _cmd_del_assets(nexus_client, repoName, assetRegex, isWildcard, doForce):
         sys.stdout.write('Found 0 matching assets: aborting delete\n')
         return errors.CliReturnCode.SUCCESS.value
     
-    sys.stdout.write('Deleted {} matching assets:\n{}\n'.format(len(assets_list), '\n'.join(assets_list)))
+    sys.stdout.write(f'Deleted {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
     return errors.CliReturnCode.SUCCESS.value
 
 
