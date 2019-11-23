@@ -364,6 +364,9 @@ class NexusClient(object):
 
         return repository, directory, filename
 
+    def split_component_from_repo(self, component_path):
+        return self._pop_repository(component_path)
+
     def _upload_dir_or_file(self, file_or_dir, dst_repo, dst_dir, dst_file,
                             **kwargs):
         """
@@ -567,34 +570,34 @@ class NexusClient(object):
                 continue
 
         return download_count
-
-    def delete(self, repository_path):
-        """
-        Delete artefacts, recursively if ``repository_path`` is a directory.
-
-        :param repository_path: location on the repository service.
-        :type repository_path: str
-        :return: number of deleted files. Negative number for errors.
-        :rtype: int
-        """
-
-        delete_count = 0
-        death_row = self.list_raw(repository_path)
-
-        death_row = progress.bar([a for a in death_row], label='Deleting')
-
-        for artefact in death_row:
-            id_ = artefact['id']
-            artefact_path = artefact['path']
-
-            response = self.http_delete(f'assets/{id_}')
-            LOG.info('Deleted: %s (%s)', artefact_path, id_)
-            delete_count += 1
-            if response.status_code == 404:
-                LOG.warning('File disappeared while deleting')
-                LOG.debug(response.reason)
-            elif response.status_code != 204:
-                LOG.error(response.reason)
-                return -1
-
-        return delete_count
+# 
+#     def delete(self, repository_path):
+#         """
+#         Delete artefacts, recursively if ``repository_path`` is a directory.
+# 
+#         :param repository_path: location on the repository service.
+#         :type repository_path: str
+#         :return: number of deleted files. Negative number for errors.
+#         :rtype: int
+#         """
+# 
+#         delete_count = 0
+#         death_row = self.list_raw(repository_path)
+# 
+#         death_row = progress.bar([a for a in death_row], label='Deleting')
+# 
+#         for artefact in death_row:
+#             id_ = artefact['id']
+#             artefact_path = artefact['path']
+# 
+#             response = self.http_delete(f'assets/{id_}')
+#             LOG.info('Deleted: %s (%s)', artefact_path, id_)
+#             delete_count += 1
+#             if response.status_code == 404:
+#                 LOG.warning('File disappeared while deleting')
+#                 LOG.debug(response.reason)
+#             elif response.status_code != 204:
+#                 LOG.error(response.reason)
+#                 return -1
+# 
+#         return delete_count

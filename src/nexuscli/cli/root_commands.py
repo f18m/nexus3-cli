@@ -136,16 +136,67 @@ def cmd_dl(*args, **kwargs):
     return cmd_download(*args, **kwargs)
 
 
-def cmd_delete(nexus_client, options):
-    """Performs ``nexus3 delete``"""
-    repository_path = options['<repository_path>']
-    delete_count = nexus_client.delete(repository_path)
+def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
+    """Performs ``nexus3 repository delete_assets``"""
+    
+    nl = '\n' # see https://stackoverflow.com/questions/44780357/how-to-use-newline-n-in-f-string-to-format-output-in-python-3-6
+    
+    if not doForce:
+        sys.stdout.write(f'Retrieving assets matching {componentPath}\n')
+        
+        assets_list = []
+        try:
+            assets_list = nexus_client.repositories.delete_assets(repoName, componentPath, isWildcard, True)
+        except exception.NexusClientAPIError as e:
+            sys.stderr.write(f'Error while running API: {e}\n')
+            return errors.CliReturnCode.API_ERROR.value
+            
+        if len(assets_list) == 0:
+            sys.stdout.write('Found 0 matching assets: aborting delete\n')
+            return errors.CliReturnCode.SUCCESS.value
+        
+        sys.stdout.write(f'Found {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
+        util.input_with_default(
+            'Press ENTER to confirm deletion', 'ctrl+c to cancel')
 
-    _cmd_up_down_errors(delete_count, 'delete')
-
-    file_word = PLURAL('file', delete_count)
-    sys.stderr.write(f'Deleted {delete_count} {file_word}\n')
+    assets_list = nexus_client.repositories.delete_assets(repoName, componentPath, isWildcard, False)
+    if len(assets_list) == 0:
+        sys.stdout.write('Found 0 matching assets: aborting delete\n')
+        return errors.CliReturnCode.SUCCESS.value
+    
+    sys.stdout.write(f'Deleted {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
     return errors.CliReturnCode.SUCCESS.value
+
+
+def cmd_delete(nexus_client, options):
+    """Performs ``nexus3 repository delete_assets``"""
+    
+    [repoName, componentMatchStr] = nexus_client.split_component_from_repo(options['<repository_path>'])
+    
+    assetWildcard = options.get('--wildcard')
+    assetRegex = args.get('--regex')
+    if assetWildcard and assetRegex:
+        sys.stderr.write(
+            f'Cannot provide both --regex and --wildcard\n')
+        return errors.CliReturnCode.INVALID_SUBCOMMAND.value
+    
+    if not assetWildcard and not assetRegex:
+        assetWildcard = True
+    
+    doForce = args.get('--force')
+    return _cmd_del_assets(nexus_client, repoName, componentMatchStr, assetWildcard, doForce)
+
+# 
+# def cmd_delete(nexus_client, options):
+#     """Performs ``nexus3 delete``"""
+#     repository_path = options['<repository_path>']
+#     delete_count = nexus_client.delete(repository_path)
+# 
+#     _cmd_up_down_errors(delete_count, 'delete')
+# 
+#     file_word = PLURAL('file', delete_count)
+#     sys.stderr.write(f'Deleted {delete_count} {file_word}\n')
+#     return errors.CliReturnCode.SUCCESS.value
 
 
 def cmd_del(*args, **kwargs):
