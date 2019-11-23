@@ -44,28 +44,28 @@ try {
     log.info(log_prefix + "Gathering list of assets from repository: ${request.repoName} matching pattern: ${request.assetRegex}  isWildcard: ${request.isWildcard}")
     Iterable<Asset> assets
     if (request.isWildcard)
-    	assets = tx.findAssets(Query.builder().where('name like ').param(request.assetRegex).build(), [repo])
+        assets = tx.findAssets(Query.builder().where('name like ').param(request.assetRegex).build(), [repo])
     else
-    	assets = tx.findAssets(Query.builder().where('name MATCHES ').param(request.assetRegex).build(), [repo])
+        assets = tx.findAssets(Query.builder().where('name MATCHES ').param(request.assetRegex).build(), [repo])
 
     def urls = assets.collect { "/repository/${repo.name}/${it.name()}" }
 
-	if (request.dryRun == false) {
-	    // add in the transaction a delete command for each asset
-	    assets.each { asset ->
-	        log.info(log_prefix + "Deleting asset ${asset.name()}")
-	        tx.deleteAsset(asset);
-	        
-	        def assetId = asset.componentId()
-	        if (assetId != null) {
-	            def component = tx.findComponent(assetId);
-	            if (component != null) {
-	                log.info(log_prefix + "Deleting component with ID ${assetId} that belongs to asset ${asset.name()}")
-	                tx.deleteComponent(component);
-	            }
-	        }
-	    }
-	}
+    if (request.dryRun == false) {
+        // add in the transaction a delete command for each asset
+        assets.each { asset ->
+            log.info(log_prefix + "Deleting asset ${asset.name()}")
+            tx.deleteAsset(asset);
+            
+            def assetId = asset.componentId()
+            if (assetId != null) {
+                def component = tx.findComponent(assetId);
+                if (component != null) {
+                    log.info(log_prefix + "Deleting component with ID ${assetId} that belongs to asset ${asset.name()}")
+                    tx.deleteComponent(component);
+                }
+            }
+        }
+    }
 
     tx.commit()
     log.info(log_prefix + "Transaction committed successfully")
@@ -83,14 +83,14 @@ try {
     log.info(log_prefix + "Rolling back changes...")
     tx.rollback()
     log.info(log_prefix + "Rollback done.")
-    
+
     def result = JsonOutput.toJson([
         success   : false,
         error     : "Exception during processing",
         assets    : null
     ])
     return result
-    
+
 } finally {
     // @todo Fix me! Danger Will Robinson!  
     tx.close()
