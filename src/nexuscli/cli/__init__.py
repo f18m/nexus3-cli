@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-"""Nexus 3 CLI
+"""Nexus 3 CLI.
 
 Usage:
-  nexus3 --help
+  nexus3 --help  # run this to see full list of commands/subcommands
+  nexus3 --version
   nexus3 login
   nexus3 (list|ls) <repository_path>
   nexus3 (upload|up) <from_src> <to_repository> [--flatten] [--norecurse]
@@ -13,6 +13,7 @@ Usage:
 Options:
   -h --help             This screen. For help with sub-commands, run
                         `nexus3 <subcommand> -h`
+  --version             Show the Nexus3 CLI version and exit
   --flatten             Flatten directory structure on `nexus3` transfers
                         [default: False]
   --nocache             Force download even if local copy is up-to-date
@@ -36,6 +37,7 @@ Sub-commands:
   repository      Repository management.
   script          Script management.
 """
+import pkg_resources
 import sys
 from docopt import docopt
 
@@ -95,6 +97,11 @@ def _run_subcommand(arguments, subcommand):
 def main(argv=None):
     """Entrypoint for the setuptools CLI console script"""
     arguments = docopt(__doc__, argv=argv, options_first=True)
+
+    if arguments.get('--version'):
+        print(pkg_resources.get_distribution('nexus3-cli').version)
+        return 0
+
     maybe_subcommand = arguments.get('<subcommand>')
 
     # "root" commands (ie not a subcommand)

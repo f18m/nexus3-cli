@@ -3,6 +3,7 @@ import getpass
 import inflect
 import sys
 import types
+
 from nexuscli import nexus_config
 from nexuscli.nexus_client import NexusClient
 from nexuscli.cli import errors, util

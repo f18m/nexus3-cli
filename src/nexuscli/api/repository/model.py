@@ -61,7 +61,9 @@ class Repository:
                  ):
         self.name = name
         self.nexus_client = nexus_client
-        self.recipe = recipe
+        # TODO: remove this the RECIPES attributes; no longer needed as there's
+        #   a unique class for each recipe/type.
+        self.recipe = recipe.lower()
         self.blob_store_name = blob_store_name
         self.strict_content = strict_content_type_validation
         self.cleanup_policy = cleanup_policy
@@ -418,6 +420,20 @@ class YumRepository(Repository):
 
         super().__init__(name, **kwargs)
 
+    @property
+    def configuration(self):
+        """
+        As per :py:obj:`Repository.configuration` but specific to this
+        repository recipe and type.
+
+        :rtype: str
+        """
+        repo_config = super().configuration
+        repo_config['attributes']['yum'] = {
+            'repodataDepth': self.depth
+        }
+        return repo_config
+
 
 class YumHostedRepository(HostedRepository, YumRepository):
     """
@@ -439,8 +455,63 @@ class YumProxyRepository(ProxyRepository, YumRepository):
     pass
 
 
+# For the convenience of not having to handle these recipe names differently
+class BowerHostedRepository(HostedRepository):
+    pass
+
+
+class BowerProxyRepository(ProxyRepository):
+    pass
+
+
+class NpmHostedRepository(HostedRepository):
+    pass
+
+
+class NpmProxyRepository(ProxyRepository):
+    pass
+
+
+class NugetHostedRepository(HostedRepository):
+    pass
+
+
+class NugetProxyRepository(ProxyRepository):
+    pass
+
+
+class PypiHostedRepository(HostedRepository):
+    pass
+
+
+class PypiProxyRepository(ProxyRepository):
+    pass
+
+
+class RawHostedRepository(HostedRepository):
+    pass
+
+
+class RawProxyRepository(ProxyRepository):
+    pass
+
+
+class RubygemsHostedRepository(HostedRepository):
+    pass
+
+
+class RubygemsProxyRepository(ProxyRepository):
+    pass
+
+
 __all__ = [
     Repository, HostedRepository, ProxyRepository,
+    BowerHostedRepository, BowerProxyRepository,
     MavenHostedRepository, MavenProxyRepository,
+    NpmHostedRepository, NpmProxyRepository,
+    NugetHostedRepository, NugetProxyRepository,
+    PypiHostedRepository, PypiProxyRepository,
+    RawHostedRepository, RawProxyRepository,
+    RubygemsHostedRepository, RubygemsProxyRepository,
     YumHostedRepository, YumProxyRepository,
 ]
