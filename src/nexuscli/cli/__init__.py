@@ -97,6 +97,7 @@ def _run_subcommand(arguments, subcommand):
 def main(argv=None):
     """Entrypoint for the setuptools CLI console script"""
     arguments = docopt(__doc__, argv=argv, options_first=True)
+    print('FIXME1')
 
     if arguments.get('--version'):
         print(pkg_resources.get_distribution('nexus3-cli').version)

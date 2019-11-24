@@ -25,7 +25,6 @@ Usage:
          [--blob=<store_name>] [--strict-content] [--cleanup=<c_policy>]
          [--write=<w_policy>]
          [--depth=<repo_depth>]
-  nexus3 repository (delete|del) <repo_name> [--force]
 
 Options:
   -h --help             This screen
@@ -47,13 +46,10 @@ Commands:
 import json
 from docopt import docopt
 from texttable import Texttable
-import json
-import sys
 
 from nexuscli import exception
 from nexuscli.api import repository
 from nexuscli.cli import errors, util
-from nexuscli import exception, nexus_util
 
 def cmd_list(nexus_client, _):
     """Performs ``nexus3 repository list``"""

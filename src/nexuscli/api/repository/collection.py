@@ -1,6 +1,7 @@
 import json
 
 from nexuscli import exception
+from nexuscli import nexus_util
 from nexuscli.api.repository import model
 
 SCRIPT_NAME_CREATE = 'nexus3-cli-repository-create'

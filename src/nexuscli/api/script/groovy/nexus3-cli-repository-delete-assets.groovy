@@ -55,7 +55,7 @@ try {
         assets.each { asset ->
             log.info(log_prefix + "Deleting asset ${asset.name()}")
             tx.deleteAsset(asset);
-            
+
             def assetId = asset.componentId()
             if (assetId != null) {
                 def component = tx.findComponent(assetId);
@@ -92,6 +92,6 @@ try {
     return result
 
 } finally {
-    // @todo Fix me! Danger Will Robinson!  
+    // @todo Fix me! Danger Will Robinson!
     tx.close()
 }

@@ -4,9 +4,13 @@ import inflect
 import sys
 import types
 
+from nexuscli import exception
 from nexuscli import nexus_config
+from nexuscli import nexus_util
 from nexuscli.nexus_client import NexusClient
 from nexuscli.cli import errors, util
+import json
+import sys
 
 
 PLURAL = inflect.engine().plural
@@ -143,7 +147,7 @@ def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
     nl = '\n' # see https://stackoverflow.com/questions/44780357/how-to-use-newline-n-in-f-string-to-format-output-in-python-3-6
     
     if not doForce:
-        sys.stdout.write(f'Retrieving assets matching {componentPath}\n')
+        sys.stdout.write(f'Retrieving assets matching {componentPath} from repository {repoName}\n')
         
         assets_list = []
         try:
@@ -172,10 +176,11 @@ def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
 def cmd_delete(nexus_client, options):
     """Performs ``nexus3 repository delete_assets``"""
     
+    print('FIXME')
     [repoName, componentMatchStr] = nexus_client.split_component_from_repo(options['<repository_path>'])
     
     assetWildcard = options.get('--wildcard')
-    assetRegex = args.get('--regex')
+    assetRegex = options.get('--regex')
     if assetWildcard and assetRegex:
         sys.stderr.write(
             f'Cannot provide both --regex and --wildcard\n')
@@ -184,7 +189,7 @@ def cmd_delete(nexus_client, options):
     if not assetWildcard and not assetRegex:
         assetWildcard = True
     
-    doForce = args.get('--force')
+    doForce = options.get('--force')
     return _cmd_del_assets(nexus_client, repoName, componentMatchStr, assetWildcard, doForce)
 
 # 
