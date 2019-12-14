@@ -1,6 +1,6 @@
 // Original from:
 // https://github.com/hlavki/nexus-scripts
-// Modified to include some improvements to 
+// Modified to include some improvements to
 //  - logging
 //  - option to do a "dry run"
 //  - support for EXACT_NAME, WILDCARD or REGEX matching methods
@@ -63,8 +63,6 @@ try {
         assets = tx.findAssets(Query.builder().where('name like ').param(request.assetName).build(), [repo])
     else if (request.assetMatchType == 'REGEX')
         assets = tx.findAssets(Query.builder().where('name MATCHES ').param(request.assetName).build(), [repo])
-    else
-        assert false: 'we should never get here'
 
     def urls = assets.collect { "/${repo.name}/${it.name()}" }
 
