@@ -193,18 +193,6 @@ def cmd_delete(nexus_client, options):
     
     return _cmd_del_assets(nexus_client, repoName, assetName, assetMatch, options.get('--force'))
 
-# 
-# def cmd_delete(nexus_client, options):
-#     """Performs ``nexus3 delete``"""
-#     repository_path = options['<repository_path>']
-#     delete_count = nexus_client.delete(repository_path)
-# 
-#     _cmd_up_down_errors(delete_count, 'delete')
-# 
-#     file_word = PLURAL('file', delete_count)
-#     sys.stderr.write(f'Deleted {delete_count} {file_word}\n')
-#     return errors.CliReturnCode.SUCCESS.value
-
 
 def cmd_del(*args, **kwargs):
     """Alias for :func:`cmd_delete`"""
