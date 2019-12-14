@@ -3,7 +3,12 @@ import hashlib
 import mmap
 import os
 import pkg_resources
+from enum import Enum
 
+class AssetMatchOptions(Enum):
+    EXACT_NAME = 1
+    WILDCARD = 2
+    REGEX = 3
 
 def _resource_filename(resource_name):
     """wrapper for pkg_resources.resource_filename"""

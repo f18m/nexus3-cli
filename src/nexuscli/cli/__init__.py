@@ -7,7 +7,7 @@ Usage:
   nexus3 (list|ls) <repository_path>
   nexus3 (upload|up) <from_src> <to_repository> [--flatten] [--norecurse]
   nexus3 (download|dl) <from_repository> <to_dst> [--flatten] [--nocache]
-  nexus3 (delete|del) <repository_path> [--regex|--wildcard] 
+  nexus3 (delete|del) <repository_path> [--regex|--wildcard] [--force]
   nexus3 <subcommand> [<arguments>...]
 
 Options:
@@ -24,7 +24,9 @@ Options:
                         as a regular expression [default: False]
   --wildcard            Intepret what follows the first '/' in the <repository_path>
                         as a wildcard expression (wildcard is '%' symbol but note it
-                        will only match artefacts prefixes or postfixes) [default: False] 
+                        will only match artefacts prefixes or postfixes) [default: False]
+  --force               When deleting, do not ask for confirmation first [default: False]
+
 Commands:
   login         Test login and save credentials to ~/.nexus-cli
   list          List all files within a path in the repository

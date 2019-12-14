@@ -61,7 +61,11 @@ def input_with_default(prompt, default=None):
     :return: user-provided answer or None, if default not provided.
     :rtype: Union[str,None]
     """
-    value = input(f'{prompt} ({default}):')
+    try:
+        value = input(f'{prompt} ({default}):')
+    except KeyboardInterrupt:
+        print('\nInterrupted')
+        sys.exit(1)
     if value:
         return str(value)
 

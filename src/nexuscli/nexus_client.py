@@ -401,9 +401,6 @@ class NexusClient(object):
 
         return repository, directory, filename
 
-    def split_component_from_repo(self, component_path):
-        return self._pop_repository(component_path)
-
     def _upload_dir_or_file(self, file_or_dir, dst_repo, dst_dir, dst_file,
                             **kwargs):
         """

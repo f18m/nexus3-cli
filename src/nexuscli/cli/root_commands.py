@@ -9,16 +9,15 @@ from nexuscli import nexus_config
 from nexuscli import nexus_util
 from nexuscli.nexus_client import NexusClient
 from nexuscli.cli import errors, util
+from nexuscli.nexus_util import AssetMatchOptions
 import json
 import sys
-
 
 PLURAL = inflect.engine().plural
 YESNO_OPTIONS = {
     "true": True, "t": True, "yes": True, "y": True,
     "false": False, "f": False, "no": False, "n": False,
 }
-
 
 def _input_yesno(prompt, default):
     """
@@ -58,7 +57,7 @@ def cmd_login(_, __):
 
     config.dump()
 
-    sys.stderr.write(f'\nConfiguration saved to {config.config_file}\n')
+    sys.stderr.write(f'\nLogged in successfully. Configuration saved to {config.config_file}\n')
 
 
 def cmd_list(nexus_client, args):
@@ -141,17 +140,17 @@ def cmd_dl(*args, **kwargs):
     return cmd_download(*args, **kwargs)
 
 
-def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
+def _cmd_del_assets(nexus_client, repoName, assetName, assetMatchOption, doForce):
     """Performs ``nexus3 repository delete_assets``"""
     
     nl = '\n' # see https://stackoverflow.com/questions/44780357/how-to-use-newline-n-in-f-string-to-format-output-in-python-3-6
     
     if not doForce:
-        sys.stdout.write(f'Retrieving assets matching {componentPath} from repository {repoName}\n')
+        sys.stdout.write(f'Retrieving assets matching {assetMatchOption.name} "{assetName}" from repository "{repoName}"\n')
         
         assets_list = []
         try:
-            assets_list = nexus_client.repositories.delete_assets(repoName, componentPath, isWildcard, True)
+            assets_list = nexus_client.repositories.delete_assets(repoName, assetName, assetMatchOption, True)
         except exception.NexusClientAPIError as e:
             sys.stderr.write(f'Error while running API: {e}\n')
             return errors.CliReturnCode.API_ERROR.value
@@ -164,7 +163,7 @@ def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
         util.input_with_default(
             'Press ENTER to confirm deletion', 'ctrl+c to cancel')
 
-    assets_list = nexus_client.repositories.delete_assets(repoName, componentPath, isWildcard, False)
+    assets_list = nexus_client.repositories.delete_assets(repoName, assetName, assetMatchOption, False)
     if len(assets_list) == 0:
         sys.stdout.write('Found 0 matching assets: aborting delete\n')
         return errors.CliReturnCode.SUCCESS.value
@@ -176,21 +175,23 @@ def _cmd_del_assets(nexus_client, repoName, componentPath, isWildcard, doForce):
 def cmd_delete(nexus_client, options):
     """Performs ``nexus3 repository delete_assets``"""
     
-    print('FIXME')
-    [repoName, componentMatchStr] = nexus_client.split_component_from_repo(options['<repository_path>'])
+    [repoName, repoDir, assetName] = nexus_client.split_component_path(options['<repository_path>'])
     
-    assetWildcard = options.get('--wildcard')
-    assetRegex = options.get('--regex')
-    if assetWildcard and assetRegex:
+    if repoDir != None:
+        # we don't need to keep repoDir separated from the assetName
+        assetName = repoDir + '/' + assetName
+    
+    assetMatch = AssetMatchOptions.EXACT_NAME
+    if options.get('--wildcard') and options.get('--regex'):
         sys.stderr.write(
             f'Cannot provide both --regex and --wildcard\n')
         return errors.CliReturnCode.INVALID_SUBCOMMAND.value
+    elif options.get('--wildcard'):
+        assetMatch = AssetMatchOptions.WILDCARD
+    elif options.get('--regex'):
+        assetMatch = AssetMatchOptions.REGEX
     
-    if not assetWildcard and not assetRegex:
-        assetWildcard = True
-    
-    doForce = options.get('--force')
-    return _cmd_del_assets(nexus_client, repoName, componentMatchStr, assetWildcard, doForce)
+    return _cmd_del_assets(nexus_client, repoName, assetName, assetMatch, options.get('--force'))
 
 # 
 # def cmd_delete(nexus_client, options):

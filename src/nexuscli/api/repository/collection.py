@@ -227,28 +227,31 @@ class RepositoryCollection:
         self._client.scripts.create_if_missing(SCRIPT_NAME_DELETE)
         self._client.scripts.run(SCRIPT_NAME_DELETE, data=name)
 
-    def delete_assets(self, reponame, assetRegex, isWildcard, dryRun):
+    def delete_assets(self, reponame, assetName, assetMatchType, dryRun):
         """
         Delete assets from a repository through a Groovy script
 
         :param reponame: name of the repository to delete assets from.
         :type reponame: str
-        :param assetRegex: wildcard for assets to delete
-        :type assetRegex: str
-        :param isWildcard: is the assetRegex a regex or a wildcard?
-        :type isWildcard: bool
+        :param assetName: name of the asset to delete
+        :type assetName: str
+        :param assetMatchType: is the assetName string an exact name, a regex or a wildcard?
+        :type assetMatchType: AssetMatchOptions
         :param dryRun: do a dry run or delete for real?
         :type dryRun: bool
         """
         content = nexus_util.groovy_script(SCRIPT_NAME_DELETE_ASSETS)
-        self._client.scripts.delete(SCRIPT_NAME_DELETE_ASSETS)
+        try:
+            self._client.scripts.delete(SCRIPT_NAME_DELETE_ASSETS)   # in case an older version is present
+        except:
+            pass
         self._client.scripts.create_if_missing(SCRIPT_NAME_DELETE_ASSETS, content)
         
         # prepare JSON for Groovy:
         jsonData = {}
         jsonData['repoName']=reponame
-        jsonData['assetRegex']=assetRegex
-        jsonData['isWildcard']=isWildcard
+        jsonData['assetName']=assetName
+        jsonData['assetMatchType']=assetMatchType.name
         jsonData['dryRun']=dryRun
         groovy_returned_json = self._client.scripts.run(SCRIPT_NAME_DELETE_ASSETS, data=json.dumps(jsonData))
         

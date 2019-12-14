@@ -51,6 +51,7 @@ from nexuscli import exception
 from nexuscli.api import repository
 from nexuscli.cli import errors, util
 
+
 def cmd_list(nexus_client, _):
     """Performs ``nexus3 repository list``"""
     repositories = nexus_client.repositories.raw_list()
