@@ -1,8 +1,9 @@
 import json
 import logging
-import os.path
-import py
+import os
+import pathlib
 import requests
+import semver
 import sys
 from clint.textui import progress
 from urllib.parse import urljoin
@@ -30,14 +31,45 @@ class NexusClient(object):
     """
     def __init__(self, config=None):
         self.config = config or NexusConfig()
-        self._local_sep = os.path.sep
+        self._local_sep = os.sep
         self._remote_sep = validations.REMOTE_PATH_SEPARATOR
+        self._server_version = None
         self._cleanup_policies = None
         self._repositories = None
         self._scripts = None
         self._verify = None
 
         self.repositories.refresh()
+
+    @property
+    def server_version(self):
+        """
+        Parse the Server header from a Nexus request response and return
+        as version information. The method expects the header Server to be
+        present and formatted as, e.g., 'Nexus/3.19.1-01 (OSS)'
+
+        :return: the parsed version. If it can't be determined, return None.
+        :rtype: Union[None,semver.VersionInfo]
+        """
+        if self._server_version is None:
+            response = self.http_get(self.config.url)
+
+            if response.status_code != 200:
+                raise exception.NexusClientAPIError(response.reason)
+
+            server = response.headers.get('Server')
+
+            if server is None:
+                return None
+
+            try:
+                maybe_semver = server.split(' ')[0].split('/')[1].split('-')[0]
+                version = semver.parse_version_info(maybe_semver)
+            except (IndexError, ValueError):
+                return None
+
+            self._server_version = version
+        return self._server_version
 
     @property
     def repositories(self):
@@ -85,7 +117,7 @@ class NexusClient(object):
 
         :rtype: str
         """
-        url = urljoin(self.config.url, '/service/rest/')
+        url = urljoin(self.config.url, 'service/rest/')
         return urljoin(url, self.config.api_version + '/')
 
     def http_request(self, method, endpoint, service_url=None, **kwargs):
@@ -111,8 +143,7 @@ class NexusClient(object):
                 method=method, auth=self.config.auth, url=url,
                 verify=self.config.x509_verify, **kwargs)
         except requests.exceptions.ConnectionError as e:
-            print(e)
-            sys.exit(1)
+            raise exception.NexusClientConnectionError(str(e)) from None
 
         if response.status_code == 401:
             raise exception.NexusClientInvalidCredentials(
@@ -176,7 +207,11 @@ class NexusClient(object):
             request_kwargs['params'].update(
                 {'continuationToken': continuation_token})
             response = self.http_request('get', endpoint, **request_kwargs)
-            content = response.json()
+
+            try:
+                content = response.json()
+            except json.decoder.JSONDecodeError:
+                raise exception.NexusClientAPIError(response.content)
 
     def http_post(self, endpoint, **kwargs):
         """
@@ -466,12 +501,13 @@ class NexusClient(object):
                 local_relative = os.path.join(
                     local_relative_dir, dst_file_name)
 
-        destination_path = py.path.local(local_dst)
-        local_absolute_path = destination_path.join(local_relative)
+        destination_path = pathlib.Path(local_dst)
+        local_path = destination_path.joinpath(local_relative)
 
         if create:
-            local_absolute_path.ensure(dir=remote_isdir)
-        return str(local_absolute_path)
+            nexus_util.ensure_exists(local_path, is_dir=remote_isdir)
+
+        return local_path.absolute()
 
     @staticmethod
     def _should_skip_download(download_url, download_path, artefact, nocache):
