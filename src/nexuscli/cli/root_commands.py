@@ -177,9 +177,13 @@ def cmd_delete(nexus_client, options):
     
     [repoName, repoDir, assetName] = nexus_client.split_component_path(options['<repository_path>'])
     
-    if repoDir != None:
+    if repoDir != None and assetName != None:
         # we don't need to keep repoDir separated from the assetName
         assetName = repoDir + '/' + assetName
+    elif repoDir == None and assetName == None:
+        sys.stderr.write(
+            f'Invalid <repository_path> provided\n')
+        return errors.CliReturnCode.INVALID_SUBCOMMAND.value
     
     assetMatch = AssetMatchOptions.EXACT_NAME
     if options.get('--wildcard') and options.get('--regex'):
