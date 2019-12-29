@@ -36,12 +36,12 @@ if (repo == null) {
     ])
     return result
 }
-else if (repo.type != 'hosted') {
+else if (!repo.type.toString().equals('hosted')) {
     log.warn(log_prefix +  "Repository ${request.repoName} has type ${repo.type}; only HOSTED repositories are supported for delete operations.")
 
     def result = JsonOutput.toJson([
         success   : false,
-        error     : "Repository '${request.repoName}' has invalid type '${repo.type}'; expecting an HOSTED repository.",
+        error     : "Repository '${request.repoName}' has invalid type '${repo.type}'; expecting an 'hosted' repository.",
         assets    : null
     ])
     return result
