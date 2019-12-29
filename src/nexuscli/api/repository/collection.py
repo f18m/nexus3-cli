@@ -3,12 +3,17 @@ import json
 from nexuscli import exception
 from nexuscli import nexus_util
 from nexuscli.api.repository import model
+from enum import Enum
 
 SCRIPT_NAME_CREATE = 'nexus3-cli-repository-create'
 SCRIPT_NAME_DELETE = 'nexus3-cli-repository-delete'
 SCRIPT_NAME_DELETE_ASSETS = 'nexus3-cli-repository-delete-assets'
 SCRIPT_NAME_GET = 'nexus3-cli-repository-get'
 
+class AssetMatchOptions(Enum):
+    EXACT_NAME = 1
+    WILDCARD = 2
+    REGEX = 3
 
 def get_repository_class(raw_configuration):
     """
@@ -248,21 +253,23 @@ class RepositoryCollection:
         self._client.scripts.create_if_missing(SCRIPT_NAME_DELETE_ASSETS, content)
         
         # prepare JSON for Groovy:
-        jsonData = {}
-        jsonData['repoName']=reponame
-        jsonData['assetName']=assetName
-        jsonData['assetMatchType']=assetMatchType.name
-        jsonData['dryRun']=dryRun
+        jsonData = {
+            'repoName': reponame,
+            'assetName': assetName,
+            'assetMatchType': assetMatchType.name,
+            'dryRun': dryRun
+        }
         groovy_returned_json = self._client.scripts.run(SCRIPT_NAME_DELETE_ASSETS, data=json.dumps(jsonData))
         
         # parse the JSON we got back
         if 'result' not in groovy_returned_json:
             raise exception.NexusClientAPIError(groovy_returned_json)
+        
         script_result = json.loads(groovy_returned_json['result']) # this is actually a JSON: convert to Python dict
         if script_result == None or 'assets' not in script_result:
             raise exception.NexusClientAPIError(groovy_returned_json)
         
-        if 'success' in script_result and script_result['success']==False:
+        if not script_result.get('success', False):
             raise exception.NexusClientAPIError(script_result['error'])
         
         assets_list = script_result['assets']

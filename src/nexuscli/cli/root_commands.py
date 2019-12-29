@@ -9,7 +9,7 @@ from nexuscli import nexus_config
 from nexuscli import nexus_util
 from nexuscli.nexus_client import NexusClient
 from nexuscli.cli import errors, util
-from nexuscli.nexus_util import AssetMatchOptions
+from nexuscli.api.repository.collection import AssetMatchOptions
 import json
 import sys
 
@@ -146,7 +146,7 @@ def _cmd_del_assets(nexus_client, repoName, assetName, assetMatchOption, doForce
     nl = '\n' # see https://stackoverflow.com/questions/44780357/how-to-use-newline-n-in-f-string-to-format-output-in-python-3-6
     
     if not doForce:
-        sys.stdout.write(f'Retrieving assets matching {assetMatchOption.name} "{assetName}" from repository "{repoName}"\n')
+        print(f'Retrieving assets matching {assetMatchOption.name} "{assetName}" from repository "{repoName}"')
         
         assets_list = []
         try:
@@ -156,19 +156,21 @@ def _cmd_del_assets(nexus_client, repoName, assetName, assetMatchOption, doForce
             return errors.CliReturnCode.API_ERROR.value
             
         if len(assets_list) == 0:
-            sys.stdout.write('Found 0 matching assets: aborting delete\n')
+            print('Found 0 matching assets: aborting delete')
             return errors.CliReturnCode.SUCCESS.value
         
-        sys.stdout.write(f'Found {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
+        print(f'Found {len(assets_list)} matching assets:\n{nl.join(assets_list)}')
         util.input_with_default(
             'Press ENTER to confirm deletion', 'ctrl+c to cancel')
 
     assets_list = nexus_client.repositories.delete_assets(repoName, assetName, assetMatchOption, False)
-    if len(assets_list) == 0:
-        sys.stdout.write('Found 0 matching assets: aborting delete\n')
+    delete_count = len(assets_list)
+    if delete_count == 0:
+        file_word = PLURAL('file', delete_count)
+        sys.stderr.write(f'Deleted {delete_count} {file_word}\n')
         return errors.CliReturnCode.SUCCESS.value
     
-    sys.stdout.write(f'Deleted {len(assets_list)} matching assets:\n{nl.join(assets_list)}\n')
+    print(f'Deleted {len(assets_list)} matching assets:\n{nl.join(assets_list)}')
     return errors.CliReturnCode.SUCCESS.value
 
 
@@ -180,15 +182,14 @@ def cmd_delete(nexus_client, options):
     if repoDir != None and assetName != None:
         # we don't need to keep repoDir separated from the assetName
         assetName = repoDir + '/' + assetName
-    elif repoDir == None and assetName == None:
+    elif repoDir == None or assetName == None:
         sys.stderr.write(
             f'Invalid <repository_path> provided\n')
         return errors.CliReturnCode.INVALID_SUBCOMMAND.value
     
     assetMatch = AssetMatchOptions.EXACT_NAME
     if options.get('--wildcard') and options.get('--regex'):
-        sys.stderr.write(
-            f'Cannot provide both --regex and --wildcard\n')
+        sys.stderr.write('Cannot provide both --regex and --wildcard\n')
         return errors.CliReturnCode.INVALID_SUBCOMMAND.value
     elif options.get('--wildcard'):
         assetMatch = AssetMatchOptions.WILDCARD
