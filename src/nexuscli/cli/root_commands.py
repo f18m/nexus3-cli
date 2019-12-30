@@ -199,7 +199,7 @@ def cmd_delete(nexus_client, options):
     if options.get('--wildcard') and options.get('--regex'):
         sys.stderr.write('Cannot provide both --regex and --wildcard\n')
         return errors.CliReturnCode.INVALID_SUBCOMMAND.value
-    
+
     if options.get('--wildcard'):
         assetMatch = AssetMatchOptions.WILDCARD
     elif options.get('--regex'):
