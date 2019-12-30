@@ -4,6 +4,7 @@ import mmap
 import os
 import pkg_resources
 
+
 def _resource_filename(resource_name):
     """wrapper for pkg_resources.resource_filename"""
     return pkg_resources.resource_filename('nexuscli', resource_name)

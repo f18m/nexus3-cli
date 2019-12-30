@@ -10,10 +10,12 @@ SCRIPT_NAME_DELETE = 'nexus3-cli-repository-delete'
 SCRIPT_NAME_DELETE_ASSETS = 'nexus3-cli-repository-delete-assets'
 SCRIPT_NAME_GET = 'nexus3-cli-repository-get'
 
+
 class AssetMatchOptions(Enum):
     EXACT_NAME = 1
     WILDCARD = 2
     REGEX = 3
+
 
 def get_repository_class(raw_configuration):
     """
@@ -159,6 +161,7 @@ class RepositoryCollection:
             must provide this at instantiation or set it before calling any
             methods that require connectivity to Nexus.
     """
+
     def __init__(self, client=None):
         self._client = client
         self._repositories_json = None
@@ -240,21 +243,25 @@ class RepositoryCollection:
         :type reponame: str
         :param assetName: name of the asset(s) to delete
         :type assetName: str
-        :param assetMatchType: is the assetName string an exact name, a regex or a wildcard?
+        :param assetMatchType: is the assetName string an exact name, a regex
+            or a wildcard?
         :type assetMatchType: AssetMatchOptions
         :param dryRun: do a dry run or delete for real?
         :type dryRun: bool
-        
+
         Returns:
             list: assets that have been found and deleted (if dryRun==false)
         """
         content = nexus_util.groovy_script(SCRIPT_NAME_DELETE_ASSETS)
         try:
-            self._client.scripts.delete(SCRIPT_NAME_DELETE_ASSETS)   # in case an older version is present
-        except:
+            # in case an older version is present
+            self._client.scripts.delete(SCRIPT_NAME_DELETE_ASSETS)
+        except exception.NexusClientAPIError:
+            # can't delete the script -- probably it's not there at all (yet)
             pass
-        self._client.scripts.create_if_missing(SCRIPT_NAME_DELETE_ASSETS, content)
-        
+        self._client.scripts.create_if_missing(
+            SCRIPT_NAME_DELETE_ASSETS, content)
+
         # prepare JSON for Groovy:
         jsonData = {
             'repoName': reponame,
@@ -262,24 +269,26 @@ class RepositoryCollection:
             'assetMatchType': assetMatchType.name,
             'dryRun': dryRun
         }
-        groovy_returned_json = self._client.scripts.run(SCRIPT_NAME_DELETE_ASSETS, data=json.dumps(jsonData))
-        
+        groovy_returned_json = self._client.scripts.run(
+            SCRIPT_NAME_DELETE_ASSETS, data=json.dumps(jsonData))
+
         # parse the JSON we got back
         if 'result' not in groovy_returned_json:
             raise exception.NexusClientAPIError(groovy_returned_json)
-        
-        script_result = json.loads(groovy_returned_json['result']) # this is actually a JSON: convert to Python dict
-        if script_result == None or 'assets' not in script_result:
+
+        # this is actually a JSON: convert to Python dict
+        script_result = json.loads(groovy_returned_json['result'])
+        if script_result is None or 'assets' not in script_result:
             raise exception.NexusClientAPIError(groovy_returned_json)
-        
+
         if not script_result.get('success', False):
             raise exception.NexusClientAPIError(script_result['error'])
-        
+
         assets_list = script_result['assets']
-        if assets_list == None:
+        if assets_list is None:
             assets_list = []
         return assets_list
-        
+
     def create(self, repository):
         """
         Creates a Nexus repository with the given format and type.

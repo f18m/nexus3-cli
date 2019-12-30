@@ -84,7 +84,9 @@ try {
     }
 
     tx.commit()
-    log.info(log_prefix + "Transaction committed successfully")
+
+    numAssets = urls.size()
+    log.info(log_prefix + "Transaction committed successfully; number of assets matched: ${numAssets}")
 
     def result = JsonOutput.toJson([
         success   : true,

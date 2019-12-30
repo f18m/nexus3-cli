@@ -68,7 +68,7 @@ def test_download(hosted_raw_repo_empty, deep_file_tree, faker, tmpdir):
 
 
 @pytest.mark.integration
-def test_delete(hosted_raw_repo_empty, deep_file_tree, faker):
+def test_delete(nexus_client, hosted_raw_repo_empty, deep_file_tree, faker):
     """Ensure that `nexus3 delete` command works"""
     src_dir, x_file_set = deep_file_tree
     dst_dir = faker.uri_path()
@@ -80,9 +80,16 @@ def test_delete(hosted_raw_repo_empty, deep_file_tree, faker):
     retcode = check_call(upload_command.split())
     assert retcode == 0
 
+    # delete all files, one by one:
+    for file in x_file_set:
+        delete_command = \
+            f'nexus3 delete --force {dest_repo_path}{src_dir}/{file}'
+        retcode = check_call(delete_command.split())
+        assert retcode == 0
+
     # FIXME: force Nexus 3 to reindex so there's no need to sleep
     sleep(5)
 
-    delete_command = f'nexus3 delete --force --wildcard {dest_repo_path}/*'
-    retcode = check_call(delete_command.split())
-    assert retcode == 0
+    # now check that the repo is actually empty:
+    file_list = list(nexus_client.list(repo_name))
+    assert len(file_list) == 0
