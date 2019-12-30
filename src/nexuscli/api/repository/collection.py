@@ -238,12 +238,15 @@ class RepositoryCollection:
 
         :param reponame: name of the repository to delete assets from.
         :type reponame: str
-        :param assetName: name of the asset to delete
+        :param assetName: name of the asset(s) to delete
         :type assetName: str
         :param assetMatchType: is the assetName string an exact name, a regex or a wildcard?
         :type assetMatchType: AssetMatchOptions
         :param dryRun: do a dry run or delete for real?
         :type dryRun: bool
+        
+        Returns:
+            list: assets that have been found and deleted (if dryRun==false)
         """
         content = nexus_util.groovy_script(SCRIPT_NAME_DELETE_ASSETS)
         try:
